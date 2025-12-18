@@ -41,7 +41,7 @@ runs:
 
 
     - name: Build and Push with Kaniko
-      uses: aevea/kaniko-action@v1.6.0
+      uses: aevea/action-kaniko@master
       with:
         registry: 192.168.50.127:30002
         username: "robot$ikusigh"
