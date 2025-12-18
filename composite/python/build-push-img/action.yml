@@ -40,17 +40,36 @@ runs:
     #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
 
 
-    - name: Build and push with Kaniko
-      uses: int128/kaniko-action@v1
+    - name: Prepare Kaniko Authentication
+      shell: bash
+      run: |
+        # Creamos el directorio para el config.json de Docker
+        mkdir -p ${{ github.workspace }}/kaniko_home/.docker
+        
+        # Generamos el AUTH en base64 (usuario robot$ikusigh)
+        AUTH=$(echo -n "robot\$ikusigh:${{ inputs.harbor-token }}" | base64)
+        
+        # Escribimos el config.json apuntando a tu IP de Harbor
+        cat << EOF > ${{ github.workspace }}/kaniko_home/.docker/config.json
+        {
+          "auths": {
+            "192.168.50.127:30002": {
+              "auth": "$AUTH"
+            }
+          }
+        }
+        EOF
+
+    - name: Build and Push with Kaniko
+      # Usamos la acción de Google que envuelve al ejecutor de Kaniko
+      # Esta acción es un "Docker Container Action", lo que en ARC
+      # lanza un contenedor separado, evitando el error de docker.sock
+      uses: aes-at-google/kaniko-action@v1
       with:
-        push: true
-        context: .
-        file: ./Dockerfile
-        tags: 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
-        # Configuración para Harbor por IP (HTTP/Inseguro)
-        extra-args: |
-          --insecure
-          --skip-tls-verify
-        # Login manual para Kaniko
-        username: "robot$ikusigh"
-        password: ${{ inputs.harbor-token }}
+        image: 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}
+        tag: 1
+        # Pasamos la ruta del config.json que creamos arriba
+        extra_args: >
+          --insecure 
+          --skip-tls-verify 
+          --docker-config-json=${{ github.workspace }}/kaniko_home/.docker/config.json
