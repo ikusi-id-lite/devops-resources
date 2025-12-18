@@ -17,6 +17,10 @@ defaults:
 runs:
   using: "composite"
   steps:
+    - name: debug secrets
+      run: |
+        echo "IKSUI_PAT is set to ${{ inputs.ikusi-token }}"
+
     - name: checkout dockerfile from templates repository
       if: ${{inputs.exec-method == 'uvicorn'}}
       uses: actions/checkout@v4
