@@ -40,14 +40,17 @@ runs:
     #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
 
 
-    - name: Build and Push with Kaniko
-      uses: aevea/action-kaniko@master
+    - name: Build and push with Kaniko
+      uses: int128/kaniko-action@v1
       with:
-        registry: 192.168.50.127:30002
+        push: true
+        context: .
+        file: ./Dockerfile
+        tags: 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
+        # Configuración para Harbor por IP (HTTP/Inseguro)
+        extra-args: |
+          --insecure
+          --skip-tls-verify
+        # Login manual para Kaniko
         username: "robot$ikusigh"
         password: ${{ inputs.harbor-token }}
-        image: ${{ inputs.registry_project }}/${{ inputs.registry_repository }}
-        tag: 1
-        cache: true
-        # Si tu Harbor es HTTP, añade esto:
-        extra_args: "--insecure --skip-tls-verify"
