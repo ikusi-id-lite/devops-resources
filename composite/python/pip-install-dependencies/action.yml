@@ -1,0 +1,9 @@
+name: 'install dependencies'
+description: 'Install Python dependencies with pip'
+
+runs:
+  using: "composite"
+  steps:
+    - name: install dependencies
+      run: |
+        pip install -r requirements.txt

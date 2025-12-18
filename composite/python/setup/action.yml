@@ -1,0 +1,16 @@
+name: 'setup python'
+description: 'Setup Python in runner'
+inputs:
+  python_version:
+    description: 'Version of Python to set up'
+    required: true
+    default: '3.8'
+
+runs:
+  using: "composite"
+  steps:
+    - name: setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{inputs.python_version}}
+        cache: 'pip' # caching pip dependencies

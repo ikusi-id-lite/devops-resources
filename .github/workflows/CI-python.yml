@@ -1,0 +1,64 @@
+---
+name: Principal devops workflow for Python
+
+on:
+  workflow_call:
+    inputs:
+      fetch-depth:
+        description: 'Depth of the git fetch'
+        required: true
+        type: number
+      python_version:
+        description: 'Version of Python to set up'
+        required: true
+        type: string
+      expose-method:
+        description: 'Method to expose the application'
+        required: true
+        type: string
+      config-json:
+        description: 'Config json to parse'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test:
+    name: CI for Python
+    runs-on: arc-runner-set
+    steps:
+      - name: Download Repo
+        id: checkout
+        uses: ikusi-id-lite/devops-resources/composite/general/checkout@main
+        with:
+          fetch-depth: ${{ inputs.fetch-depth }}
+
+
+      - name: Parsing config
+        id: parse-config
+        uses: ikusi-id-lite/devops-resources/composite/general/parsing-config@main
+        with:
+          config-json: ${{ inputs.config-json }}
+
+      - name: Setup Python
+        id: setup-python
+        uses: ikusi-id-lite/devops-resources/composite/python/setup@main
+        with:
+          python_version: ${{ inputs.python_version }}
+
+      - name: download Dockerfile
+        id: download-dockerfile
+        uses: ikusi-id-lite/devops-resources/composite/python/download-dockerfile@main
+        with:
+          exec-method: ${{ inputs.expose-method }}
+
+      - name: build and push image
+        id: build-and-push
+        uses: ikusi-id-lite/devops-resources/composite/python/build-push-img@main
+        with:
+          registry_project: 'library'
+          registry_repository: 'python-rag'
+          python_version: ${{ inputs.python_version }}

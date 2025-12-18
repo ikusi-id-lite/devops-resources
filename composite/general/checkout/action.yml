@@ -1,0 +1,16 @@
+name: 'Checkout Repository'
+description: 'Dowload the repository code'
+inputs:
+  fetch-depth:
+    description: 'Depth of the git fetch'
+    required: false
+    default: '1'
+
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout Repo'
+      uses: actions/checkout@v4
+      with:
+        # 0 All commits and tags, 1 default
+        fetch-depth: ${{ inputs.fetch-depth }}

@@ -1,0 +1,35 @@
+name: 'Build and Push Image'
+description: 'Build and push the Docker image to the registry'
+inputs:
+  registry_project:
+    description: 'Registry project name'
+    required: true
+    default: 'test-devops'
+  registry_repository:
+    description: 'Registry repository name'
+    required: true
+    default: 'python-artifact'
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Build and push
+      id: build_and_push_to_harbor
+      run: |
+        AUTH=$(echo -n robot\$ikusigh:${{ secrets.HARBOR_TOKEN }} | base64)
+        cat << EOF > config.json
+        {
+          "auths":{
+            "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
+              "username":"robot\$ikusigh","password":"${{ secrets.HARBOR_TOKEN }}","auth":"${AUTH}"
+            }
+          }
+        }
+        EOF
+        docker run \
+          -v $(pwd):/workspace \
+          -v $(pwd)/config.json:/kaniko/.docker/config.json:ro \
+          gcr.io/kaniko-project/executor:latest \
+            --context . \
+            --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1

@@ -1,0 +1,25 @@
+name: 'Download Dockerfile'
+description: 'Dowload the Dockerfile from the repository'
+inputs:
+  exec-method:
+    description: 'Execution method to use'
+    required: true
+    default: 'default'
+
+runs:
+  using: "composite"
+  steps:
+    - name: checkout dockerfile from templates repository
+      if: ${{inputs.exec-method == 'uvicorn'}}
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.IKSUI_PAT }}
+        repository: 'ikusi-id-lite/devops-resources'
+        ref: 'main'
+        path: dockerfile
+        sparse-checkout: |
+          dockerfiles/python/uvicorn-expose/Dockerfile
+        sparse-checkout-cone-mode: false
+
+    - name: Copying Dockerfile
+      run: cp ./dockerfile/dockerfiles/python/uvicorn-expose/Dockerfile ./Dockerfile

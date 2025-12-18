@@ -1,0 +1,27 @@
+name: 'Parsing Config'
+description: 'Parsing configuration from JSON input'
+inputs:
+  config-json:
+    description: 'Json configuration to parse'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Mostrar JSON recibido
+      shell: bash
+      run: echo '${{ inputs.config-json }}'
+
+    - name: Parsear dinámicamente JSON a variables de entorno
+      id: config
+      shell: bash
+      run: |
+        for row in $(echo '${{ inputs.config-json }}' | jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]'); do
+          echo "$row" >> $GITHUB_OUTPUT
+        done
+
+    - name: Usar las variables expuestas
+      shell: bash
+      run: |
+        echo "ENVIRONMENT: ${{ steps.config.outputs.environment }}"
+        echo "VERSION: ${{ steps.config.outputs.version }}"
