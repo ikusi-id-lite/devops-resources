@@ -26,4 +26,5 @@ runs:
         sparse-checkout-cone-mode: false
 
     - name: Copying Dockerfile
+      shell: bash
       run: cp ./dockerfile/dockerfiles/python/uvicorn-expose/Dockerfile ./Dockerfile
