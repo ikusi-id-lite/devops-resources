@@ -31,7 +31,6 @@ defaults:
 
 jobs:
   test:
-    secrets: inherit
     name: CI for Python
     runs-on: arc-runner-set
     steps:
@@ -57,6 +56,7 @@ jobs:
       - name: download Dockerfile
         id: download-dockerfile
         uses: ikusi-id-lite/devops-resources/composite/python/download-dockerfile@main
+        secrets: inherit
         with:
           exec-method: ${{ inputs.expose-method }}
           ikusi-token: ${{ secrets.IKSUI_PAT }}
