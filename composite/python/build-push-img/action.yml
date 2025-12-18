@@ -9,6 +9,10 @@ inputs:
     description: 'Registry repository name'
     required: true
     default: 'python-artifact'
+  harbor-token:
+    description: 'Harbor robot account token'
+    required: true
+    default: ''
 
 runs:
   using: "composite"
@@ -18,12 +22,12 @@ runs:
       id: build_and_push_to_harbor
       shell: bash
       run: |
-        AUTH=$(echo -n robot\$ikusigh:${{ secrets.HARBOR_TOKEN }} | base64)
+        AUTH=$(echo -n robot\$ikusigh:${{ inputs.harbor-token }} | base64)
         cat << EOF > config.json
         {
           "auths":{
             "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
-              "username":"robot\$ikusigh","password":"${{ secrets.HARBOR_TOKEN }}","auth":"${AUTH}"
+              "username":"robot\$ikusigh","password":"${{ inputs.harbor-token }}","auth":"${AUTH}"
             }
           }
         }
