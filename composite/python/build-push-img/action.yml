@@ -18,23 +18,45 @@ runs:
   using: "composite"
   steps:
 
+    #- name: Build and push
+    #  id: build_and_push_to_harbor
+    #  shell: bash
+    #  run: |
+    #    AUTH=$(echo -n robot\$ikusigh:${{ inputs.harbor-token }} | base64)
+    #    cat << EOF > config.json
+    #    {
+    #      "auths":{
+    #        "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
+    #          "username":"robot\$ikusigh","password":"${{ inputs.harbor-token }}","auth":"${AUTH}"
+    #        }
+    #      }
+    #    }
+    #    EOF
+    #    docker run \
+    #      -v $(pwd):/workspace \
+    #      -v $(pwd)/config.json:/kaniko/.docker/config.json:ro \
+    #      gcr.io/kaniko-project/executor:latest \
+    #        --context . \
+    #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
+
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # 2. Login en Harbor (Mucho más seguro que generar el config.json a mano)
+    - name: Login to Harbor
+      uses: docker/login-action@v3
+      with:
+        registry: 192.168.50.127:30002
+        username: "robot$ikusigh"
+        password: ${{ inputs.harbor-token }}
+
+    # 3. Build and Push con la acción oficial (Sustituye a Kaniko en este contexto)
     - name: Build and push
-      id: build_and_push_to_harbor
-      shell: bash
-      run: |
-        AUTH=$(echo -n robot\$ikusigh:${{ inputs.harbor-token }} | base64)
-        cat << EOF > config.json
-        {
-          "auths":{
-            "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
-              "username":"robot\$ikusigh","password":"${{ inputs.harbor-token }}","auth":"${AUTH}"
-            }
-          }
-        }
-        EOF
-        docker run \
-          -v $(pwd):/workspace \
-          -v $(pwd)/config.json:/kaniko/.docker/config.json:ro \
-          gcr.io/kaniko-project/executor:latest \
-            --context . \
-            --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
+        # Si tu Harbor usa HTTP o certificado auto-firmado, puedes necesitar:
+        allow: network.host

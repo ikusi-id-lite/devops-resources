@@ -71,5 +71,4 @@ jobs:
         with:
           registry_project: 'library'
           registry_repository: 'python-rag'
-          python_version: ${{ inputs.python_version }}
           harbor-token: ${{ secrets.HARBOR_TOKEN }}
