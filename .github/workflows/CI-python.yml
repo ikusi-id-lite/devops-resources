@@ -20,6 +20,11 @@ on:
         description: 'Config json to parse'
         required: true
         type: string
+    secrets:
+      IKSUI_PAT:
+        required: true
+      HARBOR_TOKEN:
+        required: true
 
 permissions:
   contents: write
