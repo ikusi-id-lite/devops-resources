@@ -40,49 +40,18 @@ runs:
     #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
 
 
-    - name: Build and Push with Kaniko (Direct Execution)
-      shell: bash
+    - name: Build and Push
+      shell: sh # Kaniko usa sh, no bash
       run: |
-        # 1. Preparar el contexto de autenticación
-        # Escapamos el $ para que bash no lo interprete
+        # Crear config de auth
         AUTH=$(echo -n "robot\$ikusigh:${{ inputs.harbor-token }}" | base64)
+        mkdir -p /kaniko/.docker
+        echo "{\"auths\":{\"192.168.50.127:30002\":{\"auth\":\"$AUTH\"}}}" > /kaniko/.docker/config.json
         
-        # Creamos un directorio local para la config de Docker
-        mkdir -p ./kaniko-home/.docker
-        cat << EOF > ./kaniko-home/.docker/config.json
-        {
-          "auths": {
-            "192.168.50.127:30002": {
-              "auth": "$AUTH"
-            }
-          }
-        }
-        EOF
-
-        # 2. Ejecutar Kaniko usando la imagen oficial mediante un truco de ARC
-        # Como no podemos hacer 'docker run', lanzamos kaniko usando el ejecutor
-        # de contenedores que ya trae tu infraestructura de Kubernetes.
-        
-        echo "Lanzando constructor Kaniko..."
-        
-        # Usamos el binario de kaniko directamente si el runner es una imagen de kaniko
-        # O, si tu runner es una imagen de Ubuntu, descargamos el binario estático:
-        
-        if [ ! -f /kaniko/executor ]; then
-          echo "Descargando binario de Kaniko..."
-          # Descargamos el ejecutor estático (no requiere instalación)
-          curl -LO https://github.com/GoogleContainerTools/kaniko/releases/latest/download/executor
-          chmod +x executor
-          KANIKO_EXEC="./executor"
-        else
-          KANIKO_EXEC="/kaniko/executor"
-        fi
-
-        # 3. Ejecución real
-        $KANIKO_EXEC \
-          --context "${{ github.workspace }}" \
-          --dockerfile "${{ github.workspace }}/Dockerfile" \
-          --destination "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1" \
+        # Ejecutar Kaniko directamente (ya estamos dentro de la imagen)
+        /kaniko/executor \
+          --context $GITHUB_WORKSPACE \
+          --dockerfile $GITHUB_WORKSPACE/Dockerfile \
+          --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1 \
           --insecure \
-          --skip-tls-verify \
-          --docker-config-json ./kaniko-home/.docker/config.json
+          --skip-tls-verify
