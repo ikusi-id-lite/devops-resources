@@ -31,6 +31,7 @@ defaults:
 
 jobs:
   test:
+    secrets: inherit
     name: CI for Python
     runs-on: arc-runner-set
     steps:
