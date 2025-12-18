@@ -18,40 +18,23 @@ runs:
   using: "composite"
   steps:
 
-    #- name: Build and push
-    #  id: build_and_push_to_harbor
-    #  shell: bash
-    #  run: |
-    #    AUTH=$(echo -n robot\$ikusigh:${{ inputs.harbor-token }} | base64)
-    #    cat << EOF > config.json
-    #    {
-    #      "auths":{
-    #        "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
-    #          "username":"robot\$ikusigh","password":"${{ inputs.harbor-token }}","auth":"${AUTH}"
-    #        }
-    #      }
-    #    }
-    #    EOF
-    #    docker run \
-    #      -v $(pwd):/workspace \
-    #      -v $(pwd)/config.json:/kaniko/.docker/config.json:ro \
-    #      gcr.io/kaniko-project/executor:latest \
-    #        --context . \
-    #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
-
-
-    - name: Build and Push
-      shell: sh # Kaniko usa sh, no bash
+    - name: Build and push
+      id: build_and_push_to_harbor
+      shell: bash
       run: |
-        # Crear config de auth
-        AUTH=$(echo -n "robot\$ikusigh:${{ inputs.harbor-token }}" | base64)
-        mkdir -p /kaniko/.docker
-        echo "{\"auths\":{\"192.168.50.127:30002\":{\"auth\":\"$AUTH\"}}}" > /kaniko/.docker/config.json
-        
-        # Ejecutar Kaniko directamente (ya estamos dentro de la imagen)
-        /kaniko/executor \
-          --context $GITHUB_WORKSPACE \
-          --dockerfile $GITHUB_WORKSPACE/Dockerfile \
-          --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1 \
-          --insecure \
-          --skip-tls-verify
+        AUTH=$(echo -n robot\$ikusigh:${{ inputs.harbor-token }} | base64)
+        cat << EOF > config.json
+        {
+          "auths":{
+            "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}":{
+              "username":"robot\$ikusigh","password":"${{ inputs.harbor-token }}","auth":"${AUTH}"
+            }
+          }
+        }
+        EOF
+        docker run \
+          -v $(pwd):/workspace \
+          -v $(pwd)/config.json:/kaniko/.docker/config.json:ro \
+          gcr.io/kaniko-project/executor:latest \
+            --context . \
+            --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
