@@ -26,8 +26,8 @@ permissions:
   pull-requests: write
 
 defaults:
-run:
-  shell: bash
+  run:
+    shell: bash
 
 jobs:
   test:
