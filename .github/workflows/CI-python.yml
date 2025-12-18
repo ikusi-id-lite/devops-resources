@@ -34,6 +34,11 @@ jobs:
     name: CI for Python
     runs-on: arc-runner-set
     steps:
+      - name: show secrets
+        shell: bash
+        run: |
+          echo "toekn is set to ${{ secrets.IKSUI_PAT }}"
+
       - name: Download Repo
         id: checkout
         uses: ikusi-id-lite/devops-resources/composite/general/checkout@main
@@ -56,7 +61,6 @@ jobs:
       - name: download Dockerfile
         id: download-dockerfile
         uses: ikusi-id-lite/devops-resources/composite/python/download-dockerfile@main
-        secrets: inherit
         with:
           exec-method: ${{ inputs.expose-method }}
           ikusi-token: ${{ secrets.IKSUI_PAT }}
