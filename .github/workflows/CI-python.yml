@@ -58,6 +58,7 @@ jobs:
         uses: ikusi-id-lite/devops-resources/composite/python/download-dockerfile@main
         with:
           exec-method: ${{ inputs.expose-method }}
+          ikusi-token: ${{ secrets.IKSUI_PAT }}
 
       - name: build and push image
         id: build-and-push

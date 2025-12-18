@@ -5,6 +5,10 @@ inputs:
     description: 'Execution method to use'
     required: true
     default: 'default'
+  ikusi-token:
+    description: 'Ikusi PAT token to checkout the repository'
+    required: true
+    default: ''
 
 defaults:
   run:
@@ -17,7 +21,7 @@ runs:
       if: ${{inputs.exec-method == 'uvicorn'}}
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.IKSUI_PAT }}
+        token: ${{ inputs.ikusi-token }}
         repository: 'ikusi-id-lite/devops-resources'
         ref: 'main'
         path: dockerfile
