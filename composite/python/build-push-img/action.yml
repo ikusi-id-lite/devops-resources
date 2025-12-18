@@ -40,39 +40,49 @@ runs:
     #        --destination 192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
 
 
-    - name: Build and Push with Kaniko Container
+    - name: Build and Push with Kaniko (Direct Execution)
       shell: bash
       run: |
-        # 1. Preparar credenciales de Harbor
-        # El nombre de usuario tiene un $, lo escapamos con \ para que Bash no lo borre
+        # 1. Preparar el contexto de autenticación
+        # Escapamos el $ para que bash no lo interprete
         AUTH=$(echo -n "robot\$ikusigh:${{ inputs.harbor-token }}" | base64)
         
-        # Creamos un directorio temporal para la config de Docker
-        mkdir -p ./kaniko-config
-        
-        echo "{\"auths\":{\"192.168.50.127:30002\":{\"auth\":\"$AUTH\"}}}" > ./kaniko-config/config.json
+        # Creamos un directorio local para la config de Docker
+        mkdir -p ./kaniko-home/.docker
+        cat << EOF > ./kaniko-home/.docker/config.json
+        {
+          "auths": {
+            "192.168.50.127:30002": {
+              "auth": "$AUTH"
+            }
+          }
+        }
+        EOF
 
-        # 2. Ejecutar Kaniko usando una imagen de contenedor directamente
-        # Al no tener Docker en el runner, usamos este truco: 
-        # Corremos el ejecutor de kaniko mediante un contenedor efímero.
-        # Si tu Runner es la imagen estándar de ARC, usaremos 'docker run' 
-        # PERO, como no tienes Docker, la forma correcta en K8s es que el runner
-        # tenga acceso al binario o usar un Sidecar.
+        # 2. Ejecutar Kaniko usando la imagen oficial mediante un truco de ARC
+        # Como no podemos hacer 'docker run', lanzamos kaniko usando el ejecutor
+        # de contenedores que ya trae tu infraestructura de Kubernetes.
         
-        # SI TU RUNNER NO TIENE DOCKER, USAMOS ESTE COMANDO DE KANIKO:
-        # Nota: Esto asume que el runner puede ejecutar imágenes de contenedor.
+        echo "Lanzando constructor Kaniko..."
         
-        echo "Iniciando construcción con Kaniko..."
+        # Usamos el binario de kaniko directamente si el runner es una imagen de kaniko
+        # O, si tu runner es una imagen de Ubuntu, descargamos el binario estático:
         
-    - name: Kaniko Executor
-      # Esta es la forma oficial de GitHub para correr un contenedor SIN 'docker run'
-      # Usamos la imagen oficial de Google Kaniko directamente
-      uses: docker://gcr.io/kaniko-project/executor:latest
-      with:
-        args: >-
-          --context=${{ github.workspace }}
-          --dockerfile=${{ github.workspace }}/Dockerfile
-          --destination=192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1
-          --insecure
-          --skip-tls-verify
-          --docker-config-json=${{ github.workspace }}/kaniko-config
+        if [ ! -f /kaniko/executor ]; then
+          echo "Descargando binario de Kaniko..."
+          # Descargamos el ejecutor estático (no requiere instalación)
+          curl -LO https://github.com/GoogleContainerTools/kaniko/releases/latest/download/executor
+          chmod +x executor
+          KANIKO_EXEC="./executor"
+        else
+          KANIKO_EXEC="/kaniko/executor"
+        fi
+
+        # 3. Ejecución real
+        $KANIKO_EXEC \
+          --context "${{ github.workspace }}" \
+          --dockerfile "${{ github.workspace }}/Dockerfile" \
+          --destination "192.168.50.127:30002/${{ inputs.registry_project }}/${{ inputs.registry_repository }}:1" \
+          --insecure \
+          --skip-tls-verify \
+          --docker-config-json ./kaniko-home/.docker/config.json
